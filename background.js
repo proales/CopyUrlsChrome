@@ -249,7 +249,9 @@ const Action = {
       
       // Extract URLs, either line by line or intelligent paste
       let urlList;
-      if (localStorage["intelligent_paste"] === "true") {
+      const useIntelligentPaste = opt.message && opt.message.intelligent === true;
+      
+      if (useIntelligentPaste) {
         urlList = clipboardString.match(/(https?|ftp|ssh|mailto):\/\/[a-z0-9\/:%_+.,#?!@&=-]+/gi);
       } else {
         urlList = clipboardString.split("\n");
@@ -310,7 +312,8 @@ const Action = {
 const CopyTo = {
   // Copy tab URLs in html format
   html: function(tabs) {
-    const anchor = localStorage['anchor'] ? localStorage['anchor'] : 'url';
+    // Always use URL as anchor for simplicity
+    const anchor = 'url';
     let s = '';
     
     for (let i = 0; i < tabs.length; i++) {
@@ -329,13 +332,8 @@ const CopyTo = {
   
   // Copy tab URLs in custom format
   custom: function(tabs) {
-    const template = (localStorage['format_custom_advanced'] && localStorage['format_custom_advanced'] !== '') 
-      ? localStorage['format_custom_advanced'] 
-      : null;
-      
-    if (template === null) {
-      return 'ERROR: Row template is empty! (see options page)';
-    }
+    // Default template if used
+    const template = "$url\n";
     
     let s = '';
     for (let i = 0; i < tabs.length; i++) {
@@ -380,12 +378,7 @@ const UpdateManager = {
   
   /** (bool) Indicates if an extension update occurred recently */
   recentUpdate: function() {
-    try {
-      const timeDiff = new Date().getTime() - new Date(parseInt(localStorage['update_last_time'])).getTime();
-      if (timeDiff < 1000 * 3600 * 24) {
-        return true;
-      }
-    } catch (ex) {}
+    // Always return false since we don't store update time anymore
     return false;
   },
   
@@ -412,9 +405,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
     return;
   }
   
-  // Save update date
-  localStorage['update_last_time'] = new Date().getTime();
-  localStorage['update_previous_version'] = details.previousVersion;
+  // Don't store update information
   UpdateManager.runtimeOnInstalledStatus = "Updated";
   
   // Update badge
@@ -455,19 +446,15 @@ const AnalyticsHelper = {
   },
   
   /** Returns a string (serialized json object) with plugin configuration info */
-  getShortSettings: function(settings) {
-    if (settings === undefined) {
-      settings = localStorage;
-    }
-    
+  getShortSettings: function() {
     const shortSettings = {
-      fm: localStorage['format'] ? localStorage['format'] : 'text',
-      an: localStorage['anchor'] ? localStorage['anchor'] : 'url',
-      da: localStorage['default_action'] ? localStorage['default_action'] : "menu",
-      mm: localStorage['mime'] ? localStorage['mime'] : 'plaintext',
-      hl: localStorage['highlighted_tab_only'] === "true" ? 1 : 0,
-      ip: localStorage['intelligent_paste'] === "true" ? 1 : 0,
-      ww: localStorage['walk_all_windows'] === "true" ? 1 : 0
+      fm: 'text',
+      an: 'url',
+      da: 'menu',
+      mm: 'plaintext',
+      hl: 0,
+      ip: 0,
+      ww: 1
     };
     
     return AnalyticsHelper.serialize(shortSettings);
@@ -480,16 +467,16 @@ const AnalyticsHelper = {
     switch(action) {
       case "copy":
         shortSettings = {
-          fm: localStorage['format'] ? localStorage['format'] : 'text',
-          an: localStorage['anchor'] ? localStorage['anchor'] : 'url',
-          mm: localStorage['mime'] ? localStorage['mime'] : 'plaintext',
-          hl: localStorage['highlighted_tab_only'] === "true" ? 1 : 0,
-          ww: localStorage['walk_all_windows'] === "true" ? 1 : 0
+          fm: 'text',
+          an: 'url',
+          mm: 'plaintext',
+          hl: 0,
+          ww: 1
         };
         break;
       case "paste":
         shortSettings = {
-          ip: localStorage['intelligent_paste'] === "true" ? 1 : 0
+          ip: 0
         };
         break;
     }
@@ -545,11 +532,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             label: 'SimplePopup',
             actionMeta: 'simple'
           };
-          const result = Action.copy({window: win, gaEvent: gaEvent});
+          const result = Action.copy({
+            window: win, 
+            gaEvent: gaEvent,
+            message: message
+          });
           sendResponse({success: true, count: result.count});
         });
       } else {
-        const result = Action.copy({window: message.window, gaEvent: message.gaEvent});
+        const result = Action.copy({
+          window: message.window, 
+          gaEvent: message.gaEvent,
+          message: message
+        });
         sendResponse({success: true, count: result.count});
       }
     } catch (e) {
@@ -568,7 +563,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         actionMeta: 'simple'
       };
       try {
-        const result = Action.paste({gaEvent: gaEvent});
+        const result = Action.paste({
+          gaEvent: gaEvent,
+          message: message
+        });
         sendResponse({success: true, count: result.count});
       } catch (e) {
         console.error("Error in paste operation:", e);
