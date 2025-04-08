@@ -1,6 +1,6 @@
-// Simple popup script
+// Popup script
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('Simple popup loaded');
+  console.log('Popup loaded');
   
   // Get elements
   const copyBtn = document.getElementById('copyBtn');

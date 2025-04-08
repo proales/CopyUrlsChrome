@@ -5,7 +5,7 @@
 			"38": "img/c_64x64.png"
 		},
 		"default_title": "CopyURLs to clipboard",
-		"default_popup": "simple_popup.html"
+		"default_popup": "popup.html"
 	},
 	"description": "Copy open tabs URLs to clipboard. Paste multiple URLs to new tabs.",
 	"icons": {
@@ -20,6 +20,6 @@
 	"content_security_policy": {
 		"extension_pages": "script-src 'self'; object-src 'self'"
 	},
-	"version": "3.0",
+	"version": "1.0",
 	"manifest_version": 3
 }

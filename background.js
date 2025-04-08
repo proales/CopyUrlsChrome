@@ -1,5 +1,4 @@
-// Log initialization of service worker
-console.log('Background service worker starting up');
+// Background service worker
 
 // Define a simple HTML encoding function to replace Encoder.js
 const htmlEntityEncoder = {
@@ -16,21 +15,19 @@ const htmlEntityEncoder = {
 
 // Register the offscreen document for clipboard operations
 chrome.runtime.onStartup.addListener(async () => {
-  console.log('onStartup triggered');
   try {
     await createOffscreenDocumentIfNeeded();
   } catch (e) {
-    console.error('Error in onStartup:', e);
+    // Error in onStartup
   }
 });
 
 // Also prepare the offscreen document when the extension is installed or updated
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('onInstalled triggered:', details);
   try {
     await createOffscreenDocumentIfNeeded();
   } catch (e) {
-    console.error('Error in onInstalled:', e);
+    // Error in onInstalled
   }
 });
 
@@ -101,7 +98,7 @@ const Clipboard = {
         extendedMime: extended_mime
       });
     } catch (e) {
-      console.error('Clipboard write error:', e);
+      // Clipboard write error
     }
   },
   
@@ -124,7 +121,7 @@ const Clipboard = {
         });
       });
     } catch (e) {
-      console.error('Clipboard read error:', e);
+      // Clipboard read error
       return '';
     }
   }
@@ -132,21 +129,16 @@ const Clipboard = {
 
 // Function to create offscreen document if it doesn't exist
 async function createOffscreenDocumentIfNeeded() {
-  console.log('Creating offscreen document if needed');
   try {
     // Check if offscreen document exists
     const existingContexts = await chrome.runtime.getContexts({
       contextTypes: ['OFFSCREEN_DOCUMENT']
     });
     
-    console.log('Existing contexts:', existingContexts);
-    
     if (existingContexts.length > 0) {
-      console.log('Offscreen document already exists, not creating a new one');
+      // Offscreen document already exists
       return;
     }
-    
-    console.log('Creating new offscreen document');
     
     // Create an offscreen document
     await chrome.offscreen.createDocument({
@@ -154,10 +146,8 @@ async function createOffscreenDocumentIfNeeded() {
       reasons: ['CLIPBOARD'],
       justification: 'Clipboard access for extension'
     });
-    
-    console.log('Offscreen document created successfully');
   } catch (error) {
-    console.error('Error creating offscreen document:', error);
+    // Error creating offscreen document
   }
 }
 
@@ -179,9 +169,6 @@ const Action = {
       let getAllWindows = true; // Default to true
       if (opt.message && typeof opt.message.allWindows !== 'undefined') {
         getAllWindows = opt.message.allWindows;
-        console.log("Walk all windows setting from message:", getAllWindows);
-      } else {
-        console.log("Using default walk all windows setting:", getAllWindows);
       }
       
       // Create query - if getAllWindows is true, we don't specify a windowId
@@ -191,13 +178,9 @@ const Action = {
         tabQuery.windowId = opt.window.id;
       }
       
-      console.log("Tab query:", tabQuery);
-      
       // Use synchronous approach for service worker
       chrome.tabs.query(tabQuery, (tabs) => {
         try {
-          console.log("Got tabs:", tabs.length);
-          
           // Use default configuration
           const format = 'text';  // Always use text format
           const highlighted_tab_only = false; // Don't filter by highlighted
@@ -211,8 +194,6 @@ const Action = {
             
           tabCount = tabs_filtered.length;
           
-          console.log("Filtered tabs:", tabCount);
-          
           // Always use text format for simplicity
           outputText = CopyTo.text(tabs_filtered);
           
@@ -222,14 +203,13 @@ const Action = {
           // Indicate to popup the number of copied URLs, for display in popup
           chrome.runtime.sendMessage({type: "copy", copied_url: tabCount});
           
-          // Tracking event - replaced by more modern tracking in MV3
-          trackEvent('Action', opt.gaEvent.action, opt.gaEvent.label, tabCount);
+          // No analytics tracking
         } catch (e) {
-          console.error("Error processing tabs:", e);
+          // Error processing tabs
         }
       });
     } catch (e) {
-      console.error("Error in copy function:", e);
+      // Error in copy function
     }
     
     return { count: tabCount };
@@ -245,7 +225,6 @@ const Action = {
     
     try {
       const clipboardString = await Clipboard.read();
-      console.log("Read from clipboard:", clipboardString ? "Content available" : "Empty");
       
       // Extract URLs, either line by line or intelligent paste
       let urlList;
@@ -263,8 +242,6 @@ const Action = {
         return { count: 0, error: "No URL found in the clipboard" };
       }
       
-      console.log("Raw URL list:", urlList.length);
-      
       // Extract URL for lines in HTML format (<a...>#url</a>)
       $.each(urlList, function(key, val) {
         const matches = val.match(new RegExp('<a[^>]+href="([^"]+)"', 'i'));
@@ -273,7 +250,7 @@ const Action = {
             urlList[key] = matches[1];
           }
         } catch(e) {
-          console.error("Error extracting URL from HTML:", e);
+          // Error extracting URL from HTML
         }
         
         urlList[key] = trim(urlList[key]);
@@ -285,7 +262,6 @@ const Action = {
       });
       
       urlCount = urlList.length;
-      console.log("Filtered URL list:", urlCount);
       
       // Open all URLs in tabs
       $.each(urlList, function(key, val) {
@@ -295,10 +271,9 @@ const Action = {
       // Tell popup to close
       chrome.runtime.sendMessage({type: "paste"});
       
-      // Tracking event - replaced by more modern tracking in MV3
-      trackEvent('Action', opt.gaEvent.action, opt.gaEvent.label, urlCount);
+      // No analytics tracking
     } catch (e) {
-      console.error("Error in paste function:", e);
+      // Error in paste function
       return { count: 0, error: e.message };
     }
     
@@ -411,8 +386,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
   // Update badge
   UpdateManager.setBadge();
   
-  // Track event
-  trackEvent('Lifecycle', 'Update', details.previousVersion);
+  // No analytics tracking
   
   // Display notification
   chrome.notifications.create("cpau_update_notification", {
@@ -424,90 +398,15 @@ chrome.runtime.onInstalled.addListener(function(details) {
   
   chrome.notifications.onClicked.addListener(function(notificationId) {
     if (notificationId === "cpau_update_notification") {
-      trackEvent('Internal link', 'Notification', 'http://finalclap.github.io/CopyAllUrl_Chrome/');
       chrome.tabs.create({url: 'http://finalclap.github.io/CopyAllUrl_Chrome/'});
     }
   });
 });
 
-/**
-* Web analytics utility functions
-*/
-const AnalyticsHelper = {
-  /** Function to get extension key to retrieve info (like version) */
-  getChromeExtensionKey: function() {
-    try {
-      const url = chrome.runtime.getURL('stop');
-      const matches = url.match(new RegExp("[a-z0-9_-]+://([a-z0-9_-]+)/stop", "i"));
-      return (matches && matches[1]) ? matches[1] : chrome.runtime.id;
-    } catch (e) {
-      return chrome.runtime.id;
-    }
-  },
-  
-  /** Returns a string (serialized json object) with plugin configuration info */
-  getShortSettings: function() {
-    const shortSettings = {
-      fm: 'text',
-      an: 'url',
-      da: 'menu',
-      mm: 'plaintext',
-      hl: 0,
-      ip: 0,
-      ww: 1
-    };
-    
-    return AnalyticsHelper.serialize(shortSettings);
-  },
-  
-  /** Returns configuration extract for tracking Action category events */
-  getActionMeta: function(action) {
-    let shortSettings = {};
-    
-    switch(action) {
-      case "copy":
-        shortSettings = {
-          fm: 'text',
-          an: 'url',
-          mm: 'plaintext',
-          hl: 0,
-          ww: 1
-        };
-        break;
-      case "paste":
-        shortSettings = {
-          ip: 0
-        };
-        break;
-    }
-    return AnalyticsHelper.serialize(shortSettings);
-  },
-  
-  /** Serializes an object for transmission to analytics. data must be an array (array or object) */
-  serialize: function(data) {
-    const chunks = [];
-    for (const i in data) {
-      chunks.push(i + ":" + data[i]);
-    }
-    return chunks.join(",");
-  }
-};
-
-// Setup a lightweight analytics system
-const _gaq = [];
-_gaq.push(['_setAccount', 'UA-30512078-5']);
-
-// Simple analytics tracking function
-function trackEvent(category, action, label, value) {
-  // In MV3, we would use a more modern analytics approach
-  console.log('Track event:', category, action, label, value);
-  // In service worker, just log the event - no analytics
-  // Real implementation would use a different analytics approach compatible with service workers
-}
+// No analytics functionality
 
 // Listen for messages from the popup, options page, and offscreen document
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("Background received message:", message);
   
   // Handle messages from the offscreen document
   if (message.target === 'background' && message.action === 'paste-result') {
@@ -527,28 +426,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Get the current window if not provided
       if (!message.window || !message.window.id) {
         chrome.windows.getCurrent(function(win) {
-          const gaEvent = message.gaEvent || {
-            action: 'Copy',
-            label: 'SimplePopup',
-            actionMeta: 'simple'
-          };
           const result = Action.copy({
-            window: win, 
-            gaEvent: gaEvent,
+            window: win,
             message: message
           });
           sendResponse({success: true, count: result.count});
         });
       } else {
         const result = Action.copy({
-          window: message.window, 
-          gaEvent: message.gaEvent,
+          window: message.window,
           message: message
         });
         sendResponse({success: true, count: result.count});
       }
     } catch (e) {
-      console.error("Error handling copy action:", e);
+      // Error handling copy action
       sendResponse({success: false, error: e.message});
     }
     return true;
@@ -557,23 +449,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Handle paste action from popup
   if (message.action === "paste") {
     try {
-      const gaEvent = message.gaEvent || {
-        action: 'Paste',
-        label: 'SimplePopup',
-        actionMeta: 'simple'
-      };
       try {
         const result = Action.paste({
-          gaEvent: gaEvent,
           message: message
         });
         sendResponse({success: true, count: result.count});
       } catch (e) {
-        console.error("Error in paste operation:", e);
+        // Error in paste operation
         sendResponse({success: false, error: e.message || "Error pasting URLs"});
       }
     } catch (e) {
-      console.error("Error handling paste action:", e);
+      // Error handling paste action
       sendResponse({success: false, error: e.message});
     }
     return true;
