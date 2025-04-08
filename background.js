@@ -1,18 +1,5 @@
 // Background service worker
 
-// Define a simple HTML encoding function to replace Encoder.js
-const htmlEntityEncoder = {
-  htmlEncode: function(text) {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  },
-  EncodeType: "entity"
-};
-
 // Register the offscreen document for clipboard operations
 chrome.runtime.onStartup.addListener(async () => {
   try {
@@ -285,46 +272,6 @@ const Action = {
 * URL copying functions for various formats
 */
 const CopyTo = {
-  // Copy tab URLs in html format
-  html: function(tabs) {
-    // Always use URL as anchor for simplicity
-    const anchor = 'url';
-    let s = '';
-    
-    for (let i = 0; i < tabs.length; i++) {
-      let row_anchor = tabs[i].url;
-      if (anchor === 'title') {
-        try {
-          row_anchor = htmlEntityEncoder.htmlEncode(tabs[i].title);
-        } catch(ex) {
-          row_anchor = tabs[i].title;
-        }
-      }
-      s += '<a href="' + tabs[i].url + '">' + row_anchor + '</a><br/>\n';
-    }
-    return s;
-  },
-  
-  // Copy tab URLs in custom format
-  custom: function(tabs) {
-    // Default template if used
-    const template = "$url\n";
-    
-    let s = '';
-    for (let i = 0; i < tabs.length; i++) {
-      let current_row = template;
-      const current_url = tabs[i].url;
-      const current_title = tabs[i].title;
-      
-      // Replace variables in template
-      current_row = current_row.replace(/\$url/gi, current_url);
-      current_row = current_row.replace(/\$title/gi, current_title);
-      
-      s += current_row;
-    }
-    return s;
-  },
-  
   // Copy tab URLs in text format
   text: function(tabs) {
     let s = '';
@@ -333,15 +280,6 @@ const CopyTo = {
     }
     return s;
   },
-  
-  // Copy tab URLs in JSON format
-  json: function(tabs) {
-    const data = [];
-    for (let i = 0; i < tabs.length; i++) {
-      data.push({url: tabs[i].url, title: tabs[i].title});
-    }
-    return JSON.stringify(data);
-  }
 };
 
 /**
@@ -402,8 +340,6 @@ chrome.runtime.onInstalled.addListener(function(details) {
     }
   });
 });
-
-// No analytics functionality
 
 // Listen for messages from the popup, options page, and offscreen document
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
