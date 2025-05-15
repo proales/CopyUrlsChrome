@@ -349,6 +349,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({text: message.text});
     return true;
   }
+  
+  // Handle offscreen document close request
+  if (message.type === 'offscreen-close') {
+    try {
+      chrome.offscreen.closeDocument();
+    } catch (e) {
+      // Error closing offscreen document
+    }
+    return true;
+  }
 
   // Handle checkRecentUpdate request from popup or options
   if (message.action === "checkRecentUpdate") {
