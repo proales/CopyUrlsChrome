@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Get elements
   const copyBtn = document.getElementById('copyBtn');
   const pasteBtn = document.getElementById('pasteBtn');
-  const optionsBtn = document.getElementById('optionsBtn');
   const allWindowsCheck = document.getElementById('allWindowsCheck');
   const statusContainer = document.getElementById('statusContainer');
   
@@ -49,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Options functionality has been removed
-  optionsBtn.style.display = 'none';
   
   // Helper function to show status
   function showStatus(message, color) {
