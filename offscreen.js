@@ -32,8 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close the offscreen document when done
     // Wait a bit to ensure the clipboard operation completes
     setTimeout(() => {
-      // Uncomment the line below in production to close the document when done
-      // chrome.runtime.sendMessage({ type: 'offscreen-close' });
+      // Send message to close the offscreen document
+      chrome.runtime.sendMessage({ target: 'background', action: 'offscreen-close' });
     }, 1000);
   });
 });
