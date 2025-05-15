@@ -34,16 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
   copyCurrentBtn.addEventListener('click', function() {
     console.log('Copy Current Window button clicked');
     showStatus("Copying from current window...", "blue");
-    chrome.runtime.sendMessage({
-      action: "copy",
-      window: {}, // Will be filled by background script
-      allWindows: false // Only current window
-    }, function(response) {
-      if (response && response.success) {
-        showStatus("Copied " + (response.count || "all") + " URLs from current window!", "green");
-      } else {
-        showStatus("Error copying URLs", "red");
-      }
+    chrome.windows.getCurrent(function(win) {
+      chrome.runtime.sendMessage({
+        action: "copy",
+        window: win, // Pass the current window object
+        allWindows: false // Only current window
+      }, function(response) {
+        if (response && response.success) {
+          showStatus("Copied " + (response.count || "all") + " URLs from current window!", "green");
+        } else {
+          showStatus("Error copying URLs", "red");
+        }
+      });
     });
   });
   
