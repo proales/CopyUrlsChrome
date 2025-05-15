@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const optionsBtn = document.getElementById('optionsBtn');
   const allWindowsCheck = document.getElementById('allWindowsCheck');
   const statusContainer = document.getElementById('statusContainer');
+  const copyCurrentBtn = document.getElementById('copyCurrentBtn');
   
   // Default to checked - no storage used
   allWindowsCheck.checked = true;
@@ -24,6 +25,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }, function(response) {
       if (response && response.success) {
         showStatus("Copied " + (response.count || "all") + " URLs!", "green");
+      } else {
+        showStatus("Error copying URLs", "red");
+      }
+    });
+  });
+  
+  copyCurrentBtn.addEventListener('click', function() {
+    console.log('Copy Current Window button clicked');
+    showStatus("Copying from current window...", "blue");
+    chrome.runtime.sendMessage({
+      action: "copy",
+      window: {}, // Will be filled by background script
+      allWindows: false // Only current window
+    }, function(response) {
+      if (response && response.success) {
+        showStatus("Copied " + (response.count || "all") + " URLs from current window!", "green");
       } else {
         showStatus("Error copying URLs", "red");
       }
