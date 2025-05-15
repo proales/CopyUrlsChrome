@@ -349,6 +349,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({text: message.text});
     return true;
   }
+  
+  // Handle offscreen document close request
+  if (message.target === 'background' && message.action === 'offscreen-close') {
+    // Close the offscreen document to prevent resource leaks
+    chrome.offscreen.closeDocument().catch(error => {
+      console.error('Error closing offscreen document:', error);
+    });
+    return true;
+  }
 
   // Handle checkRecentUpdate request from popup or options
   if (message.action === "checkRecentUpdate") {
