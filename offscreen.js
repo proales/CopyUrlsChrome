@@ -9,24 +9,27 @@ document.addEventListener('DOMContentLoaded', function() {
   document.body.appendChild(clipboardBuffer);
 
   // Listen for messages from the background script
-  chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.target !== 'offscreen') return;
 
     // Handle clipboard write
     if (message.action === 'copy') {
       writeToClipboard(message.text, message.extendedMime);
       sendResponse({ success: true });
+      return false;
     }
-    
+
     // Handle clipboard read
     if (message.action === 'paste') {
-      const text = await readFromClipboard();
-      chrome.runtime.sendMessage({
-        target: 'background',
-        action: 'paste-result',
-        text: text
+      readFromClipboard().then((text) => {
+        chrome.runtime.sendMessage({
+          target: 'background',
+          action: 'paste-result',
+          text: text
+        });
+        sendResponse({ text: text });
       });
-      sendResponse({ text: text });
+      return true; // Keep the message channel open for the async response
     }
 
     // Close the offscreen document when done
@@ -35,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Uncomment the line below in production to close the document when done
       // chrome.runtime.sendMessage({ type: 'offscreen-close' });
     }, 1000);
+    return false;
   });
 });
 
